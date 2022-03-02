@@ -33,6 +33,7 @@ Implement the following alerts on Google Cloud Monitoring.
 ### Clone the repo
 
     git clone https://github.com/aog11/dbre-assignment.git
+    cd dbre-assignment/
 
 ### Service account configuration
 
@@ -42,7 +43,7 @@ First, we need a service account and its key, which we will use to provision the
 2. Go to IAM & Admin > Service Accounts
 3. Click "CREATE SERVICE ACCOUNT"
 4. Enter the service account name and click continue
-5. Grant the editor role
+5. Grant the Editor role
 6. Click Done
 7. Once the account is created click on it and go to Keys
 8. Next, generate a new key with ADD KEY > Create new key
@@ -50,7 +51,7 @@ First, we need a service account and its key, which we will use to provision the
 
 After the previous steps are done, a JSON file will be downloaded, place this file under the **files** folder; in order to apply the steps on this assignment, it will be renamed **account.json**. 
 
-Lastly, the service account name needs to be specified in Terraform/terraform.tfvars for the variable service_account, to find it go to IAM & Admin > Service Accounts and take the Email value of the just created service account, it normally ends as `@[project-id]iam.gserviceaccount.com`
+Lastly, the service account name needs to be specified in **Terraform/terraform.tfvars** for the variable service_account, to find it go to IAM & Admin > Service Accounts and take the Email value of the just created service account, it normally ends as `@[project-id]iam.gserviceaccount.com`
 
 ***In the upcoming steps, this guide assumes the user already has Terraform and Ansible installed on their machine***
 
@@ -145,3 +146,5 @@ To destroy all the created resources execute the following:
     cd Terraform/
     terraform destroy
 confirm the operation and wait for the resources to be deleted.
+
+Delete the service account by going to IAM & Admin > Service Accounts, click on the one created for the assignment, Actions > Delete and confirm the action.
