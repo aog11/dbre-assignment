@@ -61,24 +61,31 @@ Run the `terraform apply` to create the resources
 Once the resources are created, the output will contain the values that will be used a execution variables necessary for the Ansbiel playbooks, the output will look something like this:
 
 > bucket_url = "gs://postgres_backup_bucket11251"
-machine_name = [
-  "pgsql-vm1",
-  "pgsql-vm2",
-]
-machine_private_ip = [
-  "10.1.0.2",
-  "10.1.0.3",
-]
-machine_public_ip = [
-  "34.148.111.52",
-  "34.138.155.92",
-]
+>
+> machine_name = [
+>  "pgsql-vm1",
+>  "pgsql-vm2",
+>]
+>
+>machine_private_ip = [
+>  "10.1.0.2",
+>  "10.1.0.3",
+>]
+>
+>machine_public_ip = [
+>  "34.148.111.52",
+>  "34.138.155.92",
+>]
 
 where:
+
 **bucket_url:** The url used by the cronjob in the replica VM to upload the daily backup, used in **Ansible/variables.yml**
+
 **machine_name:** The names of the machines that will be used as master and replica, used in **Ansible/variables.yml**
+
 **machine_private_ip:** The private IP of the VMs, used in the pg_hba.conf file to allow the postgres connections between the machines, used in **Ansible/variables.yml**
-**machine_public_ip:** The public IP of the machines, used to connect remote to them via Ansible or a simple SSH connection, used in **files/db_servers**
+
+**machine_public_ip:** The public IP of the machines, used to connect remotely to them via Ansible or a simple SSH connection, used in **files/db_servers**
 
 *Once the machines are created, connect to them with SSH in orde to accept the prompt message asking if you trust these machines, it's better to do it before, since Ansible times out waiting for the user response; in that same vein, in case the VMs are recreated, delete the entries created by them in ~/.ssh/known_hosts to avoid a mismatch in the identification of the previous VM and the new one.*
 
