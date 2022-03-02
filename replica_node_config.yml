@@ -1,0 +1,108 @@
+# Playbook to configure the replica node and set up the cronjob for the database backup
+---
+- hosts: replica
+  remote_user: dbadmin
+  gather_facts: no
+
+  tasks:
+
+    - name: Loading variables
+      include_vars:
+        file: ./variables.yml
+        name: serverdata
+
+    - name: Adjusting replication settings in standby server
+      shell: |
+        cat >> {{ serverdata.PGDATA }}/postgresql.conf << EOF
+        listen_addresses = '*'
+        wal_level = replica
+        wal_log_hints = on
+        archive_mode = off
+        archive_command = ''
+        restore_command = ''
+        recovery_target_timeline = 'latest'
+        max_wal_senders = 10
+        max_replication_slots = 10
+        primary_slot_name = 'node_1_slot'
+        hot_standby = on
+        log_filename = 'postgresql-%Y-%m-%d.log'
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Backing up configuration files
+      copy:
+        src: '{{ serverdata.PGDATA }}/{{item}}'
+        dest: "{{ serverdata.PGBASE }}"
+        remote_src: yes
+      loop:
+        - pg_hba.conf
+        - postgresql.conf
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Deleting $PGDATA directory (needed for pg_basebackup)
+      file:
+        path: "{{ serverdata.PGDATA }}"
+        state: absent
+      become: yes
+
+    - name: Coping data directory from master
+      shell: |
+        pg_basebackup -h {{ serverdata.servers.VM1 }} -U replicator -p 5432 -D {{ serverdata.PGDATA }} -Fp -Xs -P -R --checkpoint=fast
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Restoring standby config files
+      copy:
+        src: '{{ serverdata.PGBASE }}/{{item}}'
+        dest: "{{ serverdata.PGDATA }}"
+        remote_src: yes
+      loop:
+        - pg_hba.conf
+        - postgresql.conf
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Start PostgreSQL13 service
+      systemd:
+        state: started
+        name: postgresql-13
+      become: yes
+
+    - name: Creating backup script
+      copy:
+        dest: /var/lib/pgsql/db_backup.sh
+        content: |
+          pg_dumpall -U postgres -f /var/lib/pgsql/13/backups/db_backup_$(date +%Y%m%d).sql
+          gsutil cp /var/lib/pgsql/13/backups/db_backup_$(date +%Y%m%d).sql {{ serverdata.bucket_url }}
+        mode: '0755'
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Cronjob for the database backup
+      cron:
+        name: "Daily backup"
+        minute: "0"
+        hour: "1"
+        job: "/var/lib/pgsql/db_backup.sh"
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Copying service account key to remote host
+      copy:
+        src: "{{ serverdata.service_account_file }}"
+        dest: /tmp/account.json
+      become: yes
+
+    - name: Authenticating service account with postgres user
+      shell: |
+        gcloud auth activate-service-account --key-file=/tmp/account.json
+      become: yes
+      become_method: sudo
+      become_user: postgres

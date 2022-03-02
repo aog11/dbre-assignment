@@ -1,0 +1,28 @@
+# Variables file to be used by the playbooks
+# The values set here come from the output of the VMs provisioning with Terraform:
+#
+# servers.VM1 = machine_name[0]
+# servers.VM2 = machine_name[1]
+# servers_ip.PRIVATE_IP1 = machine_private_ip[0]
+# servers_ip.PRIVATE_IP2 = machine_private_ip[1]
+# bucket_url = bucket_url
+
+# service_account_file is the name of the generated key file from GCP for the service account
+
+# PGBASE and PGDATA are the default directories for postgres
+
+---
+servers:
+  VM1: pgsql-vm1
+  VM2: pgsql-vm2
+
+servers_ip:
+  PRIVATE_IP1: 10.1.0.3
+  PRIVATE_IP2: 10.1.0.2
+
+bucket_url: gs://postgres_backup_bucket11251
+
+PGBASE: /var/lib/pgsql/13
+PGDATA: /var/lib/pgsql/13/data
+
+service_account_file: account.json

@@ -1,0 +1,79 @@
+#Playbook to create the initial configuration of the machines:
+# - formatting and mounting attached disk
+# - installing postgresql13 package
+# - initializing the cluster
+# - adding entries for /etc/hosts
+# - adding entries to pg_hba.conf
+---
+- hosts: all
+  remote_user: dbadmin
+  gather_facts: no
+  become: yes
+
+  tasks:
+
+    - name: Loading variables
+      include_vars:
+        file: ./variables.yml
+        name: serverdata
+
+    - name: Partitioninig the attached disk
+      parted:
+        device: /dev/sdb
+        number: 1
+        state: present
+
+    - name: Formatting the attached disk
+      filesystem:
+        fstype: xfs
+        dev: /dev/sdb1
+
+    - name: Creating the postgres data directory
+      file: 
+        path: /var/lib/pgsql/13/
+        state: directory
+
+    - name: Mounting the disk
+      mount:
+        fstype: xfs
+        src: /dev/sdb1
+        path: /var/lib/pgsql/13/
+        state: mounted
+
+    - name: PostgreSQL13 installation preparation
+      shell: |
+        dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        dnf -qy module disable postgresql
+
+    - name: Installing postgresql13-server package
+      dnf: 
+        name: postgresql13-server
+        state: latest
+
+    - name: Initialize postgres cluster
+      shell: |
+        /usr/pgsql-13/bin/postgresql-13-setup initdb
+      become: yes
+
+    - name: Adding entries to pg_hba.conf for the replication user
+      shell: |
+        cat >> {{ serverdata.PGDATA }}/pg_hba.conf << EOF
+        host    all             replicator      {{ serverdata.servers.VM1 }}  trust
+        host    replication     replicator      {{ serverdata.servers.VM1 }}  trust
+        host    all             replicator      {{ serverdata.servers.VM2 }}  trust
+        host    replication     replicator      {{ serverdata.servers.VM2 }}  trust
+        host    all             all             0.0.0.0/0                     md5
+        EOF
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Adding server 1 to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ serverdata.servers_ip.PRIVATE_IP1 }} {{ serverdata.servers.VM1 }}"
+
+    - name: Adding server 2 to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ serverdata.servers_ip.PRIVATE_IP2 }} {{ serverdata.servers.VM2 }}"

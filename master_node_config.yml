@@ -1,0 +1,57 @@
+# Playbook to configure the master node
+---
+- hosts: master
+  remote_user: dbadmin
+  gather_facts: no
+
+  tasks:
+
+    - name: Loading variables
+      include_vars:
+        file: ./variables.yml
+        name: serverdata
+
+    - name: Allowing connections from any address and setting replication slots in Master
+      shell: |
+        cat >> {{ serverdata.PGDATA }}/postgresql.conf << EOF
+        listen_addresses = '*'
+        max_wal_senders = 10
+        max_replication_slots = 10
+        log_filename = 'postgresql-%Y-%m-%d.log'
+        EOF
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Script to create the replication user, replication slots and pgbench database
+      copy:
+        dest: /tmp/dbscript.sql
+        content: |
+          CREATE USER replicator WITH replication;
+          SELECT * FROM pg_create_physical_replication_slot('node_1_slot');
+          SELECT * FROM pg_create_physical_replication_slot('node_2_slot');
+          CREATE DATABASE pgbench;
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Start PostgreSQL13 service
+      systemd:
+        state: started
+        name: postgresql-13
+      become: yes
+
+    - name: Running dbscript.sql
+      shell: |
+        psql -d postgres < /tmp/dbscript.sql
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Initializing pgbench schema
+      shell: |
+        /usr/pgsql-13/bin/pgbench -i -d pgbench
+      become: yes
+      become_method: sudo
+      become_user: postgres
+

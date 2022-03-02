@@ -1,0 +1,53 @@
+# Playbook to validate that both servers are replicating,
+# each output shows the status of the commands on the servers
+# showing if replication is active:
+#  - f on master / t on replica
+#  - walsender on master / walreceiver on replica
+---
+- hosts: all
+  remote_user: dbadmin
+  gather_facts: no
+
+  tasks:
+
+    - name: Checking pg_stat_replication
+      shell: |
+        psql -c "table pg_stat_replication;"
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Checking pg_stat_wal_receiver
+      shell: |
+        psql -c "table pg_stat_wal_receiver;"
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Checking transaction_read_only
+      shell: |
+        psql -tAc "show transaction_read_only;"
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Checking pg_is_in_recovery
+      shell: |
+        psql -tAc "select pg_is_in_recovery();"
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Checking walsender process
+      shell: |
+        ps -ef | grep -i walsender | head -1
+      become: yes
+      become_method: sudo
+      become_user: postgres
+
+    - name: Checking walreceiver process
+      shell: |
+        ps -ef | grep -i walreceiver | head -1
+      become: yes
+      become_method: sudo
+      become_user: postgres
