@@ -17,12 +17,12 @@ servers:
   VM2: pgsql-vm2
 
 servers_ip:
-  PRIVATE_IP1: 10.1.0.3
-  PRIVATE_IP2: 10.1.0.2
+  PRIVATE_IP1: 10.1.0.2
+  PRIVATE_IP2: 10.1.0.3
 
 bucket_url: gs://postgres_backup_bucket11251
 
 PGBASE: /var/lib/pgsql/13
 PGDATA: /var/lib/pgsql/13/data
 
-service_account_file: account.json
+service_account_file: ../files/account.json

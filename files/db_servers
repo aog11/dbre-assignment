@@ -4,7 +4,7 @@
 # replica = machine_public_ip[1]
 
 [master]
-34.138.183.77
+34.148.111.52
 
 [replica]
-34.148.201.187
+34.138.155.92

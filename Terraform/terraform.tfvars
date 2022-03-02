@@ -1,5 +1,5 @@
 project                  = "dbre-assignment"
-credentials_file         = "account.json"
+credentials_file         = "../files/account.json"
 region                   = "us-east1"
 zone                     = "us-east1-b"
 service_account          = "srvdbre@dbre-assignment.iam.gserviceaccount.com"
